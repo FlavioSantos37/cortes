@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cortar Vídeo com FFmpeg.js</title>
+    <!-- Carregando FFmpeg.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.3/dist/ffmpeg.min.js"></script>
+</head>
+<body>
+    <h1>Cortar Vídeo com FFmpeg.js</h1>
+    <input type="file" id="videoInput" accept="video/*">
+    <button id="processVideo">Processar</button>
+    <script>
+        // Importando os métodos após carregar o script
+        const { createFFmpeg, fetchFile } = FFmpeg;
+
+        document.getElementById('processVideo').addEventListener('click', async () => {
+            const ffmpeg = createFFmpeg({ log: true });
+
+            try {
+                // Carrega o FFmpeg
+                await ffmpeg.load();
+
+                // Obtem o vídeo de entrada
+                const inputVideo = document.getElementById('videoInput').files[0];
+                if (!inputVideo) {
+                    alert('Selecione um vídeo!');
+                    return;
+                }
+
+                const inputName = 'input.mp4';
+                const outputName = 'output.mp4';
+
+                // Carrega o arquivo de entrada no FFmpeg
+                ffmpeg.FS('writeFile', inputName, await fetchFile(inputVideo));
+
+                // Define os intervalos para corte
+                const start = '00:00:10'; // Início do corte (HH:MM:SS)
+                const duration = '10';   // Duração do corte em segundos
+
+                // Executa o comando de corte
+                await ffmpeg.run('-i', inputName, '-ss', start, '-t', duration, '-c', 'copy', outputName);
+
+                // Salva o vídeo processado
+                const data = ffmpeg.FS('readFile', outputName);
+                const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
+                const url = URL.createObjectURL(videoBlob);
+
+                // Cria um link para download
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'corte.mp4';
+                link.textContent = 'Baixar Corte';
+                document.body.appendChild(link);
+
+                alert('Corte realizado com sucesso!');
+            } catch (error) {
+                console.error('Erro ao processar o vídeo:', error);
+            }
+        });
+    </script>
+</body>
+</html>
